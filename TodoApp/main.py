@@ -61,3 +61,15 @@ def update(
     if not updated_db:
         raise HTTPException(status_code=404, detail='Element not found')
     db.commit()
+
+# DELETE
+@app.delete('/todo/{todo_id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete(
+    db: db_dependency, 
+    todo_id: int = Path(gt=0)
+):
+    todo = db.get(Todos, todo_id)
+    if not todo:
+        raise HTTPException(status_code=404, detail="Element not found")
+    db.delete(todo)
+    db.commit()
