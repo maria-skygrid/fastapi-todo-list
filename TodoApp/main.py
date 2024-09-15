@@ -48,4 +48,16 @@ def create(db: db_dependency, todo_request: TodoRequest):
     todo = Todos(**todo_request.model_dump())
     db.add(todo)
     db.commit()
- 
+
+# PUT
+@app.put('/todo/{todo_id}/edit', status_code=status.HTTP_204_NO_CONTENT)
+def update(
+    db: db_dependency, 
+    todo_request: TodoRequest,
+    todo_id: int = Path(gt=0),
+):
+    todo = todo_request.model_dump(exclude_unset=True)
+    updated_db = db.query(Todos).filter(Todos.id == todo_id).update(todo)
+    if not updated_db:
+        raise HTTPException(status_code=404, detail='Element not found')
+    db.commit()
