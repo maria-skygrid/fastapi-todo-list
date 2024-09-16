@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-import models 
+import models
 from database import engine
 from api import api_router
 

@@ -1,15 +1,12 @@
 from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Path
-import models 
 from models import Todos
-from database import engine, SessionLocal
+from database import SessionLocal
 from starlette import status
 from pydantic import BaseModel, Field
 
 router = APIRouter()
-
-models.Base.metadata.create_all(bind=engine)
 
 # only open the DB when we need to make changes to it and then close it. 
 def get_db():
