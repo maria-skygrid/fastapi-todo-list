@@ -6,7 +6,6 @@ api_router = APIRouter()
 
 def todo_router():
   router = APIRouter(
-    prefix="/api/todo", 
     tags=["todo"]
   )
   router.include_router(todo_routes)
@@ -14,7 +13,6 @@ def todo_router():
 
 def auth_router():
   router = APIRouter(
-    prefix="/api/auth",
     tags=["auth"], 
   )
   router.include_router(auth_routes)
