@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from database import SessionLocal
+from starlette import status
 from models import Users
 from pydantic import BaseModel, Field
 from passlib.context import CryptContext
@@ -29,13 +30,13 @@ class CreateUserRequest(BaseModel):
   role: str
 
 # INDEX
-@router.get('/auth/')
-def get_user():
-  return { 'user': 'authenticated' }
+@router.get('/auth/', status_code=status.HTTP_200_OK)
+def index(db: db_dependency):
+  return db.query(Users).all()
 
 # CREATE
-@router.post('/auth')
-def create(create_user_request: CreateUserRequest):
+@router.post('/auth', status_code=status.HTTP_201_CREATED)
+def create(db: db_dependency, create_user_request: CreateUserRequest):
   user = Users(
     email=create_user_request.email,
     username=create_user_request.username, 
@@ -45,4 +46,5 @@ def create(create_user_request: CreateUserRequest):
     hashed_password=bcript_context.hash(create_user_request.password),
     is_active=True
   )
-  return user
+  db.add(user)
+  db.commit()
