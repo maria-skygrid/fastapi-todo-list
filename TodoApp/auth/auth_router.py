@@ -5,8 +5,11 @@ from pydantic import BaseModel, Field
 from database import SessionLocal
 from models import Users
 from pydantic import BaseModel, Field
+from passlib.context import CryptContext
 
 router = APIRouter()
+
+bcript_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 def get_db():
     db = SessionLocal()
@@ -39,8 +42,7 @@ def create(create_user_request: CreateUserRequest):
     first_name=create_user_request.first_name,
     last_name=create_user_request.last_name,
     role=create_user_request.role, 
-    hashed_password=create_user_request.password,
+    hashed_password=bcript_context.hash(create_user_request.password),
     is_active=True
   )
-
   return user
