@@ -1,15 +1,15 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from database import SessionLocal
 from starlette import status
 from models import Users
 from pydantic import BaseModel, Field
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordRequestForm
-from jose import jwt
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2AuthorizationCodeBearer
+from jose import JWTError, jwt
 
 router = APIRouter()
 
@@ -17,7 +17,14 @@ router = APIRouter()
 SECRET_KEY = 'de1ee65e2958c601c444e88e675b3a6b9fb9cac6080952f03f59a6ea97214e25'
 ALGORITHM = 'HS256'
 
+# encode
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+
+#decode
+oauth_bearer = OAuth2AuthorizationCodeBearer(tokenUrl='token')
+# tokenUrl parameter contains the URL that the client sends to the API app.
+# we need this function to verify the token in the API request.
+
 
 def authenticate_user(username: str, password: str, db):
    user = db.query(Users).filter(Users.username == username).first()
@@ -36,6 +43,21 @@ def create_access_token(username: str, user_id: int, expires_delta: timedelta):
     expires = datetime.now(timezone.utc) + expires_delta
     encode.update({'exp': expires})
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+# we call this function to all API endpoints that need authorization. 
+def get_current_user(token: Annotated[str, Depends(oauth_bearer)]):
+   try: 
+      payload = jwt.decode(token, SECRET_KEY, algorithm=[ALGORITHM])
+      username: str = payload.get('sub') #sub is our username
+      user_id: int = payload.get('id')
+      if username is None or user_id is None:
+         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                             detail='Could not validate user')
+      return {'username': username, 'id': user_id}
+   except JWTError:
+       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                             detail='Could not validate user')
+      
 
 def get_db():
     db = SessionLocal()
