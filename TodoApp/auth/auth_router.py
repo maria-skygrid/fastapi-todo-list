@@ -8,7 +8,7 @@ from starlette import status
 from models import Users
 from pydantic import BaseModel, Field
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2AuthorizationCodeBearer
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import JWTError, jwt
 
 router = APIRouter()
@@ -21,7 +21,7 @@ ALGORITHM = 'HS256'
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 #decode
-oauth_bearer = OAuth2AuthorizationCodeBearer(tokenUrl='token')
+oauth_bearer = OAuth2PasswordBearer(tokenUrl='token')
 # tokenUrl parameter contains the URL that the client sends to the API app.
 # we need this function to verify the token in the API request.
 
@@ -77,7 +77,7 @@ class CreateUserRequest(BaseModel):
   role: str
 
 class Token(BaseModel):
-  acces_token: str
+  access_token: str
   token_type: str
 
 
@@ -106,7 +106,7 @@ def create(db: db_dependency, create_user_request: CreateUserRequest):
 def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
-       return 'Authentication failed'
-    
+       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                             detail='Could not validate user')
     token = create_access_token(user.username, user.id, timedelta(minutes=20))
-    return {'access_token': token, 'token_type': 'bearer'}
+    return { 'access_token': token, 'token_type': 'bearer' }
