@@ -46,7 +46,7 @@ def show(
         raise HTTPException(status_code=401, detail='Authentication failed')
     todo = db.query(Todos).filter(Todos.id == todo_id, Todos.user_id == user.get('id')).first()
     if not todo:
-        raise HTTPException(status_code=404, detail='Element not')
+        raise HTTPException(status_code=404, detail='Element not found')
     return todo
 
 # POST
@@ -61,12 +61,15 @@ def create(user: user_dependency, db: db_dependency, todo_request: TodoRequest):
 # PUT
 @router.put('/todo/{todo_id}/edit', status_code=status.HTTP_204_NO_CONTENT)
 def update(
+    user: user_dependency,
     db: db_dependency, 
     todo_request: TodoRequest,
     todo_id: int = Path(gt=0),
 ):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed')
     todo = todo_request.model_dump(exclude_unset=True)
-    updated_db = db.query(Todos).filter(Todos.id == todo_id).update(todo)
+    updated_db = db.query(Todos).filter(Todos.id == todo_id, Todos.user_id == user.get('id')).update(todo)
     if not updated_db:
         raise HTTPException(status_code=404, detail='Element not found')
     db.commit()
