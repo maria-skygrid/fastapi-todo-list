@@ -31,12 +31,20 @@ class TodoRequest(BaseModel):
 # INDEX
 @router.get('/', status_code=status.HTTP_200_OK)
 def index(user: user_dependency, db: db_dependency):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication failed')
     return db.query(Todos).filter(Todos.user_id == user.get('id')).all()
 
 # SHOW
 @router.get('/todo/{todo_id}', status_code=status.HTTP_200_OK)
-def show(db: db_dependency, todo_id: int=Path(gt=0)):
-    todo = db.get(Todos, todo_id)
+def show(
+    user: user_dependency,
+    db: db_dependency, 
+    todo_id: int=Path(gt=0)
+):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication failed')
+    todo = db.query(Todos).filter(Todos.id == todo_id, Todos.user_id == user.get('id')).first()
     if not todo:
         raise HTTPException(status_code=404, detail='Element not')
     return todo
