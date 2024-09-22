@@ -77,10 +77,13 @@ def update(
 # DELETE
 @router.delete('/todo/{todo_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(
+    user: user_dependency,
     db: db_dependency, 
     todo_id: int = Path(gt=0)
 ):
-    todo = db.get(Todos, todo_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed')
+    todo = db.query(Todos).filter(Todos.id == todo_id, Todos.user_id == user.get('id')).first()
     if not todo:
         raise HTTPException(status_code=404, detail="Element not found")
     db.delete(todo)
