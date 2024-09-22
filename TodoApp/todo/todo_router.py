@@ -28,11 +28,13 @@ class TodoRequest(BaseModel):
     complete: bool    
 
 
+def throw_authenticate_error():
+    raise HTTPException(status_code=401, detail='Authentication failed')
+
 # INDEX
 @router.get('/', status_code=status.HTTP_200_OK)
 def index(user: user_dependency, db: db_dependency):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Authentication failed')
+    if user is None: throw_authenticate_error()
     return db.query(Todos).filter(Todos.user_id == user.get('id')).all()
 
 # SHOW
@@ -42,8 +44,7 @@ def show(
     db: db_dependency, 
     todo_id: int=Path(gt=0)
 ):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Authentication failed')
+    if user is None: throw_authenticate_error()
     todo = db.query(Todos).filter(Todos.id == todo_id, Todos.user_id == user.get('id')).first()
     if not todo:
         raise HTTPException(status_code=404, detail='Element not found')
@@ -52,8 +53,7 @@ def show(
 # POST
 @router.post('/todo/', status_code=status.HTTP_201_CREATED)
 def create(user: user_dependency, db: db_dependency, todo_request: TodoRequest):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Authentication Failed')
+    if user is None: throw_authenticate_error()
     todo = Todos(**todo_request.model_dump(), user_id=user.get('id'))
     db.add(todo)
     db.commit()
@@ -66,8 +66,7 @@ def update(
     todo_request: TodoRequest,
     todo_id: int = Path(gt=0),
 ):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Authentication Failed')
+    if user is None: throw_authenticate_error()
     todo = todo_request.model_dump(exclude_unset=True)
     updated_db = db.query(Todos).filter(Todos.id == todo_id, Todos.user_id == user.get('id')).update(todo)
     if not updated_db:
@@ -81,8 +80,7 @@ def delete(
     db: db_dependency, 
     todo_id: int = Path(gt=0)
 ):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Authentication Failed')
+    if user is None: throw_authenticate_error()
     todo = db.query(Todos).filter(Todos.id == todo_id, Todos.user_id == user.get('id')).first()
     if not todo:
         raise HTTPException(status_code=404, detail="Element not found")
